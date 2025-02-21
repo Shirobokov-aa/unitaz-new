@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "next/link";
 
 export default function AdminDashboard() {
   return (
@@ -10,7 +10,14 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Edit categories and subcategories</p>
         </Link>
         {/* Add more sections as needed */}
+        <Link
+          href="/admin/collections/previews"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        >
+          <h2 className="text-xl font-semibold mb-2">Коллекции</h2>
+          <p className="text-gray-600">Управление превью коллекций</p>
+        </Link>
       </div>
     </div>
-  )
+  );
 }

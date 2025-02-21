@@ -52,6 +52,16 @@ export const fetchCollectionByName = async (name: string): Promise<CollectionWit
     },
   });
 };
+export const fetchCollectionById = async (id: number): Promise<CollectionWithSections | undefined> => {
+  return db.query.collections.findFirst({
+    where: (collections, { eq }) => eq(collections.id, id),
+    with: {
+      sections: {
+        orderBy: (sections, { asc }) => [asc(sections.order)],
+      },
+    },
+  });
+};
 
 // ============================================================================
 // Page Fetchers

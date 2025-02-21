@@ -1,3 +1,5 @@
+"use server"
+
 import { db } from "@/lib/db";
 import {
   aboutPage,
@@ -15,8 +17,57 @@ import {
   MainSection,
   mainSections,
   subCategories,
+  collectionPreviews, // Добавьте этот импорт
+  CollectionPreview, // И этот
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+
+// Добавьте новую функцию здесь, перед saveCategories
+export async function saveCollectionPreviews(previews: CollectionPreview[]) {
+  try {
+    await db.transaction(async (tx) => {
+      // Получаем все существующие ID
+      const existingPreviews = await tx.select({ id: collectionPreviews.id }).from(collectionPreviews);
+      const existingIds = new Set(existingPreviews.map((preview) => preview.id));
+
+      for (const preview of previews) {
+        if (existingIds.has(preview.id)) {
+          // Обновляем существующее превью
+          await tx
+            .update(collectionPreviews)
+            .set({
+              image: preview.image,
+              title: preview.title,
+              desc: preview.desc,
+              link: preview.link,
+              flexDirection: preview.flexDirection,
+            })
+            .where(eq(collectionPreviews.id, preview.id));
+          existingIds.delete(preview.id);
+        } else {
+          // Добавляем новое превью без id
+          await tx.insert(collectionPreviews).values({
+            image: preview.image,
+            title: preview.title,
+            desc: preview.desc,
+            link: preview.link,
+            flexDirection: preview.flexDirection,
+          });
+        }
+      }
+
+      // Удаляем превью, которых больше нет в списке
+      for (const id of existingIds) {
+        await tx.delete(collectionPreviews).where(eq(collectionPreviews.id, id));
+      }
+    });
+
+    return { success: true, message: "Превью коллекций сохранены успешно" };
+  } catch (error) {
+    console.error("Ошибка сохранения превью коллекций:", error);
+    return { success: false, message: "Не удалось сохранить превью коллекций" };
+  }
+}
 
 export async function saveCategories(data: CategoryWithSubCategories[]) {
   try {
