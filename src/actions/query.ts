@@ -5,6 +5,8 @@ import {
   bathroomSections,
   kitchenSections,
   mainSections,
+  collections,
+  collectionSections,
   type CollectionWithSections,
   type ImageSlide,
 } from "@/lib/db/schema";
@@ -52,16 +54,47 @@ export const fetchCollectionByName = async (name: string): Promise<CollectionWit
     },
   });
 };
-export const fetchCollectionById = async (id: number): Promise<CollectionWithSections | undefined> => {
-  return db.query.collections.findFirst({
-    where: (collections, { eq }) => eq(collections.id, id),
-    with: {
-      sections: {
-        orderBy: (sections, { asc }) => [asc(sections.order)],
+
+export const fetchCollectionById = async (id: number) => {
+  try {
+    const collection = await db.query.collections.findFirst({
+      where: eq(collections.id, id),
+      with: {
+        sections: {
+          orderBy: asc(collectionSections.order),
+        },
       },
-    },
-  });
+    });
+
+    if (!collection) {
+      console.warn(`Collection with ID ${id} not found`);
+      return null;
+    }
+
+    return collection;
+  } catch (error) {
+    console.error('Error fetching collection:', error);
+    return null;
+  }
 };
+
+// export const fetchCollectionById = async (id: number): Promise<CollectionWithSections | null> => {
+//   try {
+//     const collection = await db.query.collections.findFirst({
+//       where: (collections, { eq }) => eq(collections.id, id),
+//       with: {
+//         sections: {
+//           orderBy: (sections, { asc }) => [asc(sections.order)],
+//         },
+//       },
+//     });
+
+//     return collection || null;
+//   } catch (error) {
+//     console.error('Error fetching collection:', error);
+//     return null;
+//   }
+// };
 
 // ============================================================================
 // Page Fetchers

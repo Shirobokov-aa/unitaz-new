@@ -19,14 +19,113 @@ import {
   subCategories,
   collectionPreviews, // Добавьте этот импорт
   CollectionPreview, // И этот
+
+  collections,
+  collectionSections,
+  Collection,
+  CollectionSection,
+
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+
+type CollectionWithSections = Collection & { sections: CollectionSection[] };
+
+export async function saveCollection(data: CollectionWithSections) {
+  try {
+    await db.transaction(async (tx) => {
+      // Обновляем или создаем коллекцию
+      if (data.id) {
+        await tx
+          .update(collections)
+          .set({
+            name: data.name,
+            bannerImage: data.bannerImage,
+            bannerTitle: data.bannerTitle,
+            bannerDescription: data.bannerDescription,
+            bannerLinkText: data.bannerLinkText,
+            bannerLinkUrl: data.bannerLinkUrl,
+            updatedAt: new Date(),
+          })
+          .where(eq(collections.id, data.id));
+      } else {
+        const [inserted] = await tx
+          .insert(collections)
+          .values({
+            name: data.name,
+            bannerImage: data.bannerImage,
+            bannerTitle: data.bannerTitle,
+            bannerDescription: data.bannerDescription,
+            bannerLinkText: data.bannerLinkText,
+            bannerLinkUrl: data.bannerLinkUrl,
+          })
+          .returning();
+        data.id = inserted.id;
+      }
+
+      // Получаем существующие секции
+      const existingSections = await tx
+        .select({ id: collectionSections.id })
+        .from(collectionSections)
+        .where(eq(collectionSections.collectionId, data.id));
+
+      const existingIds = new Set(existingSections.map(section => section.id));
+
+      // Обновляем или создаем секции
+      for (const section of data.sections) {
+        if (existingIds.has(section.id)) {
+          await tx
+            .update(collectionSections)
+            .set({
+              type: section.type,
+              title: section.title,
+              description: section.description,
+              linkText: section.linkText,
+              linkUrl: section.linkUrl,
+              titleDesc: section.titleDesc,
+              descriptionDesc: section.descriptionDesc,
+              images: section.images,
+              order: section.order,
+            })
+            .where(eq(collectionSections.id, section.id));
+          existingIds.delete(section.id);
+        } else {
+          await tx.insert(collectionSections).values({
+            collectionId: data.id,
+            type: section.type,
+            title: section.title,
+            description: section.description,
+            linkText: section.linkText,
+            linkUrl: section.linkUrl,
+            titleDesc: section.titleDesc,
+            descriptionDesc: section.descriptionDesc,
+            images: section.images,
+            order: section.order,
+          });
+        }
+      }
+
+      // Удаляем секции, которых больше нет
+      for (const id of existingIds) {
+        await tx
+          .delete(collectionSections)
+          .where(eq(collectionSections.id, id));
+      }
+    });
+
+    return { success: true, message: "Коллекция сохранена успешно" };
+  } catch (error) {
+    console.error("Ошибка сохранения коллекции:", error);
+    return { success: false, message: "Не удалось сохранить коллекцию" };
+  }
+}
+
+// ===========
 
 // Добавьте новую функцию здесь, перед saveCategories
 export async function saveCollectionPreviews(previews: CollectionPreview[]) {
   try {
     await db.transaction(async (tx) => {
-      // Получаем все существующие ID
+      // Получаем все существующие ID превью
       const existingPreviews = await tx.select({ id: collectionPreviews.id }).from(collectionPreviews);
       const existingIds = new Set(existingPreviews.map((preview) => preview.id));
 
@@ -44,28 +143,82 @@ export async function saveCollectionPreviews(previews: CollectionPreview[]) {
             })
             .where(eq(collectionPreviews.id, preview.id));
           existingIds.delete(preview.id);
+
+          // Обновляем соответствующую коллекцию, если она существует
+          const existingCollection = await tx.query.collections.findFirst({
+            where: eq(collections.id, preview.id)
+          });
+
+          if (existingCollection) {
+            await tx
+              .update(collections)
+              .set({
+                name: preview.title,
+                bannerImage: preview.image,
+                bannerTitle: preview.title,
+                bannerDescription: preview.desc,
+                bannerLinkText: 'Подробнее',
+                bannerLinkUrl: preview.link,
+                updatedAt: new Date(),
+              })
+              .where(eq(collections.id, preview.id));
+          }
         } else {
-          // Добавляем новое превью без id
+          // Добавляем новое превью
           await tx.insert(collectionPreviews).values({
+            id: preview.id, // Важно указать id
             image: preview.image,
             title: preview.title,
             desc: preview.desc,
             link: preview.link,
             flexDirection: preview.flexDirection,
           });
+
+          // Создаем соответствующую коллекцию
+          const [newCollection] = await tx
+            .insert(collections)
+            .values({
+              id: preview.id, // Используем тот же id
+              name: preview.title,
+              bannerImage: preview.image,
+              bannerTitle: preview.title,
+              bannerDescription: preview.desc,
+              bannerLinkText: 'Подробнее',
+              bannerLinkUrl: preview.link,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .returning();
+
+          // Создаем базовую секцию для новой коллекции
+          await tx.insert(collectionSections).values({
+            collectionId: newCollection.id,
+            type: 'section',
+            title: 'Новая секция',
+            description: 'Описание секции',
+            linkText: '',
+            linkUrl: '',
+            titleDesc: '',
+            descriptionDesc: '',
+            images: [],
+            order: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
         }
       }
 
-      // Удаляем превью, которых больше нет в списке
+      // Удаляем превью и коллекции, которых больше нет в списке
       for (const id of existingIds) {
         await tx.delete(collectionPreviews).where(eq(collectionPreviews.id, id));
+        await tx.delete(collections).where(eq(collections.id, id));
       }
     });
 
-    return { success: true, message: "Превью коллекций сохранены успешно" };
+    return { success: true, message: "Превью коллекций и детальные страницы сохранены успешно" };
   } catch (error) {
-    console.error("Ошибка сохранения превью коллекций:", error);
-    return { success: false, message: "Не удалось сохранить превью коллекций" };
+    console.error("Ошибка сохранения:", error);
+    return { success: false, message: "Не удалось сохранить данные" };
   }
 }
 
