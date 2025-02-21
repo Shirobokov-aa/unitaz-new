@@ -11,13 +11,27 @@ import CollectionDetailSection from "@/components/collection-detail/CollectionDe
 import CollectionDetailSection2 from "@/components/collection-detail/CollectionDetailSection2";
 import CollectionDetailSection3 from "@/components/collection-detail/CollectionDetailSection3";
 import CollectionDetailSection4 from "@/components/collection-detail/CollectionDetailSection4";
-import { fetchCollectionByName } from "@/actions/query";
+import { fetchCollectionById } from "@/actions/query";
 import { notFound } from "next/navigation";
 
-export async function CollectionContent({ params }: { params: { name: string } }) {
-  const collection = await fetchCollectionByName(params.name);
+// interface ContentProps {
+//   params: Promise<{ id: string }>;
+// }
+
+
+export async function CollectionContent({ params }: { params: { id: string } }) {
+  const resolvedParams = await params;
+  const id = parseInt(resolvedParams.id, 10);
+
+  if (isNaN(id)) {
+    console.error('Invalid ID:', resolvedParams.id);
+    return notFound();
+  }
+
+  const collection = await fetchCollectionById(id);
 
   if (!collection) {
+    console.error('Collection not found:', id);
     return notFound();
   }
 
@@ -27,6 +41,8 @@ export async function CollectionContent({ params }: { params: { name: string } }
     section3: CollectionDetailSection3,
     section4: CollectionDetailSection4,
   } as const;
+
+  const collectionId = id;
 
   return (
     <>
@@ -47,7 +63,7 @@ export async function CollectionContent({ params }: { params: { name: string } }
                 <Slash />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <BreadcrumbLink href={`/collections/collection-detail/${params.name.toLowerCase()}`}>
+                <BreadcrumbLink href={`/collections/collection-detail/${collectionId}`}>
                   {collection.name}
                 </BreadcrumbLink>
               </BreadcrumbItem>

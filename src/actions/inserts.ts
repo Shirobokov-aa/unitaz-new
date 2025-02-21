@@ -125,48 +125,39 @@ export async function saveCollection(data: CollectionWithSections) {
 export async function saveCollectionPreviews(previews: CollectionPreview[]) {
   try {
     await db.transaction(async (tx) => {
-      // Получаем все существующие ID превью
       const existingPreviews = await tx.select({ id: collectionPreviews.id }).from(collectionPreviews);
       const existingIds = new Set(existingPreviews.map((preview) => preview.id));
 
       for (const preview of previews) {
         if (existingIds.has(preview.id)) {
-          // Обновляем существующее превью
-          await tx
-            .update(collectionPreviews)
-            .set({
-              image: preview.image,
-              title: preview.title,
-              desc: preview.desc,
-              link: preview.link,
-              flexDirection: preview.flexDirection,
-            })
-            .where(eq(collectionPreviews.id, preview.id));
-          existingIds.delete(preview.id);
+          // Обновляем существующее превью и коллекцию
+          await Promise.all([
+            tx.update(collectionPreviews)
+              .set({
+                image: preview.image,
+                title: preview.title,
+                desc: preview.desc,
+                link: preview.link,
+                flexDirection: preview.flexDirection,
+              })
+              .where(eq(collectionPreviews.id, preview.id)),
 
-          // Обновляем соответствующую коллекцию, если она существует
-          const existingCollection = await tx.query.collections.findFirst({
-            where: eq(collections.id, preview.id)
-          });
-
-          if (existingCollection) {
-            await tx
-              .update(collections)
+            tx.update(collections)
               .set({
                 name: preview.title,
                 bannerImage: preview.image,
                 bannerTitle: preview.title,
                 bannerDescription: preview.desc,
-                bannerLinkText: 'Подробнее',
-                bannerLinkUrl: preview.link,
                 updatedAt: new Date(),
               })
-              .where(eq(collections.id, preview.id));
-          }
+              .where(eq(collections.id, preview.id))
+          ]);
+
+          existingIds.delete(preview.id);
         } else {
-          // Добавляем новое превью
+          // Создаем новое превью и коллекцию атомарно
           await tx.insert(collectionPreviews).values({
-            id: preview.id, // Важно указать id
+            id: preview.id,
             image: preview.image,
             title: preview.title,
             desc: preview.desc,
@@ -174,32 +165,24 @@ export async function saveCollectionPreviews(previews: CollectionPreview[]) {
             flexDirection: preview.flexDirection,
           });
 
-          // Создаем соответствующую коллекцию
-          const [newCollection] = await tx
-            .insert(collections)
-            .values({
-              id: preview.id, // Используем тот же id
-              name: preview.title,
-              bannerImage: preview.image,
-              bannerTitle: preview.title,
-              bannerDescription: preview.desc,
-              bannerLinkText: 'Подробнее',
-              bannerLinkUrl: preview.link,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            })
-            .returning();
+          await tx.insert(collections).values({
+            id: preview.id,
+            name: preview.title,
+            bannerImage: preview.image,
+            bannerTitle: preview.title,
+            bannerDescription: preview.desc,
+            bannerLinkText: 'Подробнее',
+            bannerLinkUrl: preview.link,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
 
-          // Создаем базовую секцию для новой коллекции
+          // Создаем базовую секцию
           await tx.insert(collectionSections).values({
-            collectionId: newCollection.id,
+            collectionId: preview.id,
             type: 'section',
             title: 'Новая секция',
             description: 'Описание секции',
-            linkText: '',
-            linkUrl: '',
-            titleDesc: '',
-            descriptionDesc: '',
             images: [],
             order: 0,
             createdAt: new Date(),
@@ -208,17 +191,20 @@ export async function saveCollectionPreviews(previews: CollectionPreview[]) {
         }
       }
 
-      // Удаляем превью и коллекции, которых больше нет в списке
+      // Удаляем устаревшие записи
       for (const id of existingIds) {
-        await tx.delete(collectionPreviews).where(eq(collectionPreviews.id, id));
-        await tx.delete(collections).where(eq(collections.id, id));
+        await Promise.all([
+          tx.delete(collectionPreviews).where(eq(collectionPreviews.id, id)),
+          tx.delete(collections).where(eq(collections.id, id)),
+          tx.delete(collectionSections).where(eq(collectionSections.collectionId, id))
+        ]);
       }
     });
 
-    return { success: true, message: "Превью коллекций и детальные страницы сохранены успешно" };
+    return { success: true };
   } catch (error) {
     console.error("Ошибка сохранения:", error);
-    return { success: false, message: "Не удалось сохранить данные" };
+    return { success: false, message: error instanceof Error ? error.message : "Неизвестная ошибка" };
   }
 }
 

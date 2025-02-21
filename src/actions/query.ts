@@ -56,6 +56,7 @@ export const fetchCollectionByName = async (name: string): Promise<CollectionWit
 };
 
 export const fetchCollectionById = async (id: number) => {
+  console.log('Fetching collection with ID:', id);
   try {
     const collection = await db.query.collections.findFirst({
       where: eq(collections.id, id),
@@ -67,13 +68,14 @@ export const fetchCollectionById = async (id: number) => {
     });
 
     if (!collection) {
-      console.warn(`Collection with ID ${id} not found`);
+      console.warn(`Collection with ID ${id} not found in database`);
       return null;
     }
 
+    console.log('Found collection:', collection);
     return collection;
   } catch (error) {
-    console.error('Error fetching collection:', error);
+    console.error('Error in fetchCollectionById:', error);
     return null;
   }
 };

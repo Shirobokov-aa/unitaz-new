@@ -16,7 +16,7 @@ function CollectionCard({ item }: { item: CollectionPreview }) {
         </div>
         <div className="xl:pt-0 pt-10">
           <Link
-            href={`/collections/collection-detail/${item.title.toLowerCase()}`}
+            href={`/collections/collection-detail/${item.id}`}
             className="text-desc border-b border-black"
           >
             Посмотреть
