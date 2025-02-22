@@ -103,7 +103,7 @@ export default function Header({ categories, defaultTextColor = "text-white", ac
               </li>
             ))}
             <li className={`hover:opacity-80 transition-colors ${currentTextColor}`}>
-              <Link href={"/"}>Сервисы</Link>
+              <Link href={"/collections"}>Коллекции</Link>
             </li>
             <li className={`hover:opacity-80 transition-colors ${currentTextColor}`}>
               <Link href={"/about"}>О компании</Link>

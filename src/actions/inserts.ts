@@ -10,8 +10,8 @@ import {
   CategoryWithSubCategories,
   ImageSlide,
   imageSlides,
-  InsertCategory,
-  InsertSubCategory,
+  // InsertCategory,
+  // InsertSubCategory,
   KitchenSection,
   kitchenSections,
   MainSection,
@@ -208,53 +208,69 @@ export async function saveCollectionPreviews(previews: CollectionPreview[]) {
   }
 }
 
-export async function saveCategories(data: CategoryWithSubCategories[]) {
+export async function saveCategories(categoriesData: CategoryWithSubCategories[]) {
   try {
     await db.transaction(async (tx) => {
-      for (const category of data) {
-        let categoryId: number;
+      const existingCategories = await tx.select().from(categories);
+      const existingIds = new Set(existingCategories.map(cat => cat.id));
 
-        if (category.id) {
-          // Update existing category
+      for (const category of categoriesData) {
+        if (category.id && existingIds.has(category.id)) {
           await tx
             .update(categories)
-            .set({ name: category.name, images: category.images })
+            .set({
+              name: category.name,
+              images: category.images,
+              updatedAt: new Date(),
+            })
             .where(eq(categories.id, category.id));
-          categoryId = category.id;
+
+          // Удаляем старые подкатегории
+          await tx
+            .delete(subCategories)
+            .where(eq(subCategories.categoryId, category.id));
+
+          existingIds.delete(category.id);
         } else {
-          // Insert new category
-          const newCategory: InsertCategory = {
-            name: category.name,
-            images: category.images,
-          };
-          const [insertedCategory] = await tx.insert(categories).values(newCategory).returning({ id: categories.id });
-          categoryId = insertedCategory.id;
+          // Создаем новую категорию
+          const [inserted] = await tx
+            .insert(categories)
+            .values({
+              name: category.name,
+              images: category.images,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .returning();
+
+          category.id = inserted.id;
         }
 
-        // Handle subcategories
-        for (const subCategory of category.subCategories) {
-          if (subCategory.id) {
-            // Update existing subcategory
-            await tx
-              .update(subCategories)
-              .set({ name: subCategory.name, href: subCategory.href })
-              .where(eq(subCategories.id, subCategory.id));
-          } else {
-            // Insert new subcategory
-            const newSubCategory: InsertSubCategory = {
-              name: subCategory.name,
-              href: subCategory.href,
-            };
-            await tx.insert(subCategories).values({ ...newSubCategory, categoryId: categoryId });
-          }
+        // Добавляем новые подкатегории
+        if (category.subCategories.length > 0) {
+          await tx.insert(subCategories).values(
+            category.subCategories.map(sub => ({
+              name: sub.name,
+              href: sub.href,
+              categoryId: category.id
+            }))
+          );
         }
+      }
+
+      // Удаляем категории, которых больше нет
+      for (const id of existingIds) {
+        await tx.delete(categories).where(eq(categories.id, id));
       }
     });
 
-    return { success: true, message: "Categories and subcategories saved successfully" };
+    return { success: true, message: "Categories saved successfully" };
   } catch (error) {
     console.error("Error saving categories:", error);
-    return { success: false, message: "Failed to save categories and subcategories" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to save categories"
+    };
   }
 }
 
