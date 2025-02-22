@@ -438,56 +438,65 @@ export async function saveBathroomSections(sections: BathroomSection[]) {
 }
 
 export async function saveKitchenSections(sections: KitchenSection[]) {
+  console.log('Saving kitchen sections:', {
+    totalSections: sections.length,
+    sections: sections.map(s => ({
+      type: s.section,
+      isImage: !!s.image,
+      hasImages: s.images?.length > 0
+    }))
+  });
+
   try {
     await db.transaction(async (tx) => {
-      // Get all existing section IDs
       const existingSections = await tx.select({ id: kitchenSections.id }).from(kitchenSections);
       const existingIds = new Set(existingSections.map((section) => section.id));
 
       for (const section of sections) {
+        const sectionData = {
+          section: section.section,
+          title: section.title,
+          description: section.description,
+          name: section.name,
+          image: section.image || '', // Убедимся, что поле image не undefined
+          images: section.images || [],
+          linkText: section.linkText,
+          linkUrl: section.linkUrl,
+          order: section.order,
+          updatedAt: new Date(),
+        };
+
+        console.log('Processing section:', {
+          id: section.id,
+          type: section.section,
+          isNew: !existingIds.has(section.id),
+          hasImage: !!section.image,
+          imageData: section.image
+        });
+
         if (existingIds.has(section.id)) {
-          // Update existing section
           await tx
             .update(kitchenSections)
-            .set({
-              section: section.section,
-              title: section.title,
-              description: section.description,
-              name: section.name,
-              image: section.image,
-              images: section.images,
-              linkText: section.linkText,
-              linkUrl: section.linkUrl,
-              order: section.order,
-              updatedAt: new Date(),
-            })
+            .set(sectionData)
             .where(eq(kitchenSections.id, section.id));
           existingIds.delete(section.id);
         } else {
-          // Insert new section
           await tx.insert(kitchenSections).values({
-            section: section.section,
-            title: section.title,
-            description: section.description,
-            name: section.name,
-            image: section.image,
-            images: section.images,
-            linkText: section.linkText,
-            linkUrl: section.linkUrl,
-            order: section.order,
+            ...sectionData,
+            createdAt: new Date(),
           });
         }
       }
 
-      // Delete sections that are no longer present
+      // Удаляем старые секции
       for (const id of existingIds) {
         await tx.delete(kitchenSections).where(eq(kitchenSections.id, id));
       }
     });
 
-    return { success: true, message: "Kitchen sections saved successfully" };
+    return { success: true };
   } catch (error) {
     console.error("Error saving kitchen sections:", error);
-    return { success: false, message: "Failed to save kitchen sections" };
+    throw error;
   }
 }

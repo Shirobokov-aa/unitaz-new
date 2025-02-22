@@ -157,17 +157,34 @@ export const fetchBathroomPage = async () => {
  * Fetches content for the kitchen page, organized by section type
  */
 export const fetchKitchenPage = async () => {
-  return {
-    banner: await db.query.kitchenSections.findFirst({
-      where: eq(kitchenSections.section, "banner"),
-    }),
-    sections: await db.query.kitchenSections.findMany({
-      where: eq(kitchenSections.section, "section"),
-      orderBy: asc(kitchenSections.order),
-    }),
-    collections: await db.query.kitchenSections.findMany({
-      where: eq(kitchenSections.section, "collection"),
-      orderBy: asc(kitchenSections.order),
-    }),
-  };
+  console.log('Fetching kitchen page data...');
+
+  try {
+    const data = {
+      banner: await db.query.kitchenSections.findFirst({
+        where: eq(kitchenSections.section, "banner"),
+      }),
+      sections: await db.query.kitchenSections.findMany({
+        where: eq(kitchenSections.section, "section"),
+        orderBy: asc(kitchenSections.order),
+      }),
+      collections: await db.query.kitchenSections.findMany({
+        where: eq(kitchenSections.section, "collection"),
+        orderBy: asc(kitchenSections.order),
+      }),
+    };
+
+    // Добавляем детальное логирование
+    console.log('Kitchen Page Data:', {
+      hasBanner: !!data.banner,
+      bannerData: data.banner,
+      sectionsCount: data.sections.length,
+      collectionsCount: data.collections.length
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching kitchen page:', error);
+    throw error;
+  }
 };

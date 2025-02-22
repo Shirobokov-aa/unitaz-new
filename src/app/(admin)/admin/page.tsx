@@ -17,6 +17,20 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-semibold mb-2">Коллекции</h2>
           <p className="text-gray-600">Управление превью коллекций</p>
         </Link>
+        <Link
+          href="/admin/about"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        >
+          <h2 className="text-xl font-semibold mb-2">О нас</h2>
+          <p className="text-gray-600">Управление страницей о нас</p>
+        </Link>
+        <Link
+          href="/admin/kitchen"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        >
+          <h2 className="text-xl font-semibold mb-2">Кухни</h2>
+          <p className="text-gray-600">Управление страницей Кухни</p>
+        </Link>
       </div>
     </div>
   );

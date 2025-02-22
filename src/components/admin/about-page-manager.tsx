@@ -98,7 +98,7 @@ export function AboutPageManager({ initialData }: AboutPageManagerProps) {
           placeholder="Banner Name"
         />
         <div>
-          <label className="block text-sm font-medium text-gray-700">Banner Image</label>
+          <label className="block text-sm font-medium text-gray-700">Баннер</label>
           <Input type="file" accept="image/*" onChange={handleImageUpload} />
           {aboutData.bannerImage && (
             <img src={aboutData.bannerImage || "/placeholder.svg"} alt="Banner" className="mt-2 max-w-xs" />
@@ -129,7 +129,7 @@ export function AboutPageManager({ initialData }: AboutPageManagerProps) {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Sections</h2>
+        <h2 className="text-xl font-semibold">Секция</h2>
         {aboutData.sections.map((section, index) => (
           <div key={index} className="space-y-2 p-4 border rounded">
             <Input
@@ -143,16 +143,16 @@ export function AboutPageManager({ initialData }: AboutPageManagerProps) {
               placeholder="Section Description"
             />
             <Button type="button" onClick={() => removeSection(index)} variant="destructive">
-              Remove Section
+              Удалить секцию
             </Button>
           </div>
         ))}
         <Button type="button" onClick={addSection}>
-          Add Section
+          Добавить секцию
         </Button>
       </div>
 
-      <Button type="submit">Save About Page</Button>
+      <Button type="submit">Сохранить</Button>
     </form>
   );
 }

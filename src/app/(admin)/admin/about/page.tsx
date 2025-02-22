@@ -6,7 +6,7 @@ export default async function AboutPageManagementPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">About Page Management</h1>
+      <h1 className="text-3xl font-bold mb-6">Редактирования о Компании</h1>
       <AboutPageManager initialData={aboutPageData} />
     </div>
   );

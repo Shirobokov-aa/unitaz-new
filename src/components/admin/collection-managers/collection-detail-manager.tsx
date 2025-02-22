@@ -10,6 +10,7 @@ import type { Collection, CollectionSection } from "@/lib/db/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { saveCollection } from "@/actions/inserts";
 import { SectionImageManager } from "../collection-managers/section-image-manager";
+import Image from "next/image";
 
 type SectionImage = {
   src: string;
@@ -95,14 +96,14 @@ export function CollectionDetailManager({ initialData }: CollectionDetailManager
     e.preventDefault();
     try {
       // Проверяем корректность данных изображений
-      const validSections = sections.map(section => ({
+      const validSections = sections.map((section) => ({
         ...section,
-        images: Array.isArray(section.images) ? section.images : []
+        images: Array.isArray(section.images) ? section.images : [],
       }));
 
       const result = await saveCollection({
         ...collection,
-        sections: validSections
+        sections: validSections,
       });
 
       if (result.success) {
@@ -137,7 +138,14 @@ export function CollectionDetailManager({ initialData }: CollectionDetailManager
           <label className="block text-sm font-medium text-gray-700">Баннер</label>
           <Input type="file" accept="image/*" onChange={handleImageUpload} />
           {collection.bannerImage && (
-            <img src={collection.bannerImage} alt="Banner" className="mt-2 max-w-xs object-contain" />
+            <Image
+              src={collection.bannerImage}
+              alt="Banner"
+              width={500}
+              height={300}
+              className="mt-2 max-w-xs object-contain"
+              unoptimized // Добавляем это свойство, так как используем base64
+            />
           )}
         </div>
 
