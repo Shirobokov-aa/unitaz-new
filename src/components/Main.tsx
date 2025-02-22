@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import ImageBlock from "./blocks/image-block";
 import { MainSection } from "@/lib/db/schema";
 
+
+type SectionType = "intro" | "banner" | "feature" | "collections" | "showcase"
+
 const IntroSection = ({ data }: { data: MainSection }) => (
   <div className="max-w-1440 mx-auto lg:px-24 px-5 pt-10">
     <div className="flex xl:flex-row flex-col lg:gap-20 gap-10">
@@ -164,6 +167,9 @@ const ShowcaseSection = ({ data }: { data: MainSection }) => (
   </div>
 );
 
+// Фиксированный порядок секций
+const SECTION_ORDER: SectionType[] = ["intro", "banner", "feature", "collections", "showcase"];
+
 const SECTION_COMPONENTS: Record<string, React.ComponentType<{ data: MainSection }>> = {
   intro: IntroSection,
   banner: BannerSection,
@@ -175,15 +181,20 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType<{ data: MainSection
 export default function Main({ ...mainPage }: Record<string, MainSection[]>) {
   return (
     <main>
-      {Object.entries(mainPage).map(([key, sections]) => {
-        const SectionComponent = SECTION_COMPONENTS[key];
-        const sectionData = sections[0];
+      {SECTION_ORDER.map((sectionType) => {
+        const sections = mainPage[sectionType];
+        const SectionComponent = SECTION_COMPONENTS[sectionType];
+        const sectionData = sections?.[0];
 
-        return SectionComponent && sectionData ? (
-          <section key={key}>
+        if (!SectionComponent || !sectionData) {
+          return null;
+        }
+
+        return (
+          <section key={sectionType}>
             <SectionComponent data={sectionData} />
           </section>
-        ) : null;
+        );
       })}
     </main>
   );

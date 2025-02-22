@@ -10,12 +10,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 import { saveBathroomSections } from "@/actions/inserts";
+import Image from "next/image";
 
 type SectionType = "banner" | "sections" | "collections";
-type ImageType = { src: string; alt: string; desc: string };
+
+interface ImageType {
+  src: string;
+  alt: string;
+  desc: string;
+}
 
 interface BathroomPageData {
-  banner: BathroomSection | null;
+  banner: BathroomSection | undefined;
   sections: BathroomSection[];
   collections: BathroomSection[];
 }
@@ -28,16 +34,51 @@ export function BathroomPageManager({ initialData }: BathroomPageManagerProps) {
   const [bathroomData, setBathroomData] = useState<BathroomPageData>(initialData);
   const router = useRouter();
 
+  const addBanner = useCallback(() => {
+    setBathroomData((prev) => ({
+      ...prev,
+      banner: {
+        id: 0,
+        section: "banner",
+        title: "",
+        description: "",
+        name: "",
+        image: "",
+        images: [],
+        linkText: "",
+        linkUrl: "",
+        order: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    }));
+  }, []);
+
   const updateSection = useCallback(
     (type: SectionType, index: number, field: keyof BathroomSection, value: string | number | ImageType[]) => {
       setBathroomData((prev) => {
-        if (type === "banner") {
-          return { ...prev, banner: prev.banner ? { ...prev.banner, [field]: value } : null };
-        } else {
+        if (type === "banner" && prev.banner) {
+          return {
+            ...prev,
+            banner: {
+              ...prev.banner,
+              [field]: value,
+              updatedAt: new Date(),
+            },
+          };
+        } else if (type === "sections" || type === "collections") {
           const newData = { ...prev };
-          newData[type][index] = { ...newData[type][index], [field]: value };
+          const sectionArray = newData[type];
+          if (sectionArray[index]) {
+            sectionArray[index] = {
+              ...sectionArray[index],
+              [field]: value,
+              updatedAt: new Date(),
+            };
+          }
           return newData;
         }
+        return prev;
       });
     },
     []
@@ -50,7 +91,7 @@ export function BathroomPageManager({ initialData }: BathroomPageManagerProps) {
         ...prev[type],
         {
           id: 0,
-          section: type,
+          section: type === "sections" ? "section" : "collection",
           title: "",
           description: "",
           name: "",
@@ -74,18 +115,52 @@ export function BathroomPageManager({ initialData }: BathroomPageManagerProps) {
   }, []);
 
   const handleImageUpload = useCallback(
-    async (type: SectionType, index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    async (type: SectionType, sectionIndex: number, imageIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          updateSection(type, index, "image", base64String);
-        };
-        reader.readAsDataURL(file);
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Ошибка",
+          description: "Пожалуйста, выберите изображение",
+          variant: "destructive",
+        });
+        return;
       }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setBathroomData((prev) => {
+          if (type === "banner" && prev.banner) {
+            return {
+              ...prev,
+              banner: {
+                ...prev.banner,
+                image: result,
+                updatedAt: new Date(),
+              },
+            };
+          } else if (type === "sections" || type === "collections") {
+            const newData = { ...prev };
+            const section = newData[type][sectionIndex];
+            if (section) {
+              section.images = section.images || [];
+              section.images[imageIndex] = {
+                src: result,
+                alt: section.title || `Image ${imageIndex + 1}`,
+                desc: "",
+              };
+              section.updatedAt = new Date();
+            }
+            return newData;
+          }
+          return prev;
+        });
+      };
+      reader.readAsDataURL(file);
     },
-    [updateSection]
+    []
   );
 
   const addImage = useCallback((type: SectionType, sectionIndex: number) => {
@@ -158,12 +233,83 @@ export function BathroomPageManager({ initialData }: BathroomPageManagerProps) {
         onChange={(e) => updateSection(type, index, "name", e.target.value)}
         placeholder="Name"
       />
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Image</label>
-        <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(type, index, e)} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {section.image && <img src={section.image || "/placeholder.svg"} alt="Section" className="mt-2 max-w-xs" />}
-      </div>
+
+      {type === "banner" ? (
+        <div>
+          <h4 className="font-semibold mb-2">Изображение баннера</h4>
+          <div className="space-y-4">
+            <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(type, index, 0, e)} />
+            {section.image && (
+              <div className="relative mt-2 h-40">
+                <Image
+                  src={section.image}
+                  alt={section.title || "Banner image"}
+                  fill
+                  className="object-contain rounded"
+                  unoptimized={section.image.startsWith("data:")}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h4 className="font-semibold mb-2">Изображения</h4>
+          <div className="space-y-4">
+            {section.images?.map((image, imageIndex) => (
+              <div key={imageIndex} className="border p-4 rounded">
+                <div className="grid gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Изображение {imageIndex + 1}</label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(type, index, imageIndex, e)}
+                    />
+                    {image.src && (
+                      <div className="relative mt-2 h-40">
+                        <Image
+                          src={image.src}
+                          alt={image.alt}
+                          fill
+                          className="object-contain rounded"
+                          unoptimized={image.src.startsWith("data:")}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <Input
+                    value={image.alt}
+                    onChange={(e) => updateImage(type, index, imageIndex, "alt", e.target.value)}
+                    placeholder="Alt текст"
+                  />
+
+                  <Input
+                    value={image.desc}
+                    onChange={(e) => updateImage(type, index, imageIndex, "desc", e.target.value)}
+                    placeholder="Описание"
+                  />
+
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => removeImage(type, index, imageIndex)}
+                  >
+                    Удалить изображение
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            <Button type="button" onClick={() => addImage(type, index)} className="w-full">
+              Добавить изображение
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Input
         value={section.linkText || ""}
         onChange={(e) => updateSection(type, index, "linkText", e.target.value)}
@@ -180,37 +326,7 @@ export function BathroomPageManager({ initialData }: BathroomPageManagerProps) {
         onChange={(e) => updateSection(type, index, "order", Number.parseInt(e.target.value))}
         placeholder="Order"
       />
-      <div>
-        <h4 className="font-semibold mb-2">Images</h4>
-        {section.images.map((image, imageIndex) => (
-          <div key={imageIndex} className="border p-2 rounded mb-2">
-            <Input
-              value={image.src}
-              onChange={(e) => updateImage(type, index, imageIndex, "src", e.target.value)}
-              placeholder="Image URL"
-              className="mb-1"
-            />
-            <Input
-              value={image.alt}
-              onChange={(e) => updateImage(type, index, imageIndex, "alt", e.target.value)}
-              placeholder="Alt Text"
-              className="mb-1"
-            />
-            <Input
-              value={image.desc}
-              onChange={(e) => updateImage(type, index, imageIndex, "desc", e.target.value)}
-              placeholder="Description"
-              className="mb-1"
-            />
-            <Button type="button" onClick={() => removeImage(type, index, imageIndex)} variant="destructive" size="sm">
-              Remove Image
-            </Button>
-          </div>
-        ))}
-        <Button type="button" onClick={() => addImage(type, index)} size="sm">
-          Add Image
-        </Button>
-      </div>
+
       {type !== "banner" && (
         <Button
           type="button"
@@ -227,11 +343,17 @@ export function BathroomPageManager({ initialData }: BathroomPageManagerProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-4">Banner</h2>
-        {bathroomData.banner && renderSectionForm("banner", bathroomData.banner, 0)}
+        {bathroomData.banner ? (
+          renderSectionForm("banner", bathroomData.banner, 0)
+        ) : (
+          <Button type="button" onClick={addBanner}>
+            Add Banner
+          </Button>
+        )}
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold mb-4">Sections</h2>
+        <h2 className="text-2xl font-bold mb-4">Sections ({bathroomData.sections.length})</h2>
         {bathroomData.sections.map((section, index) => renderSectionForm("sections", section, index))}
         <Button type="button" onClick={() => addSection("sections")}>
           Add Section
@@ -239,7 +361,7 @@ export function BathroomPageManager({ initialData }: BathroomPageManagerProps) {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold mb-4">Collections</h2>
+        <h2 className="text-2xl font-bold mb-4">Collections ({bathroomData.collections.length})</h2>
         {bathroomData.collections.map((collection, index) => renderSectionForm("collections", collection, index))}
         <Button type="button" onClick={() => addSection("collections")}>
           Add Collection

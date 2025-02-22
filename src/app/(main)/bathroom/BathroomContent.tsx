@@ -13,6 +13,14 @@ import { fetchBathroomPage } from "@/actions/query";
 
 export default async function BathroomPage() {
   const bathroom = await fetchBathroomPage();
+
+  // Добавим логирование для проверки данных
+  console.log('Bathroom data:', {
+    banner: bathroom.banner,
+    sectionsCount: bathroom.sections.length,
+    collectionsCount: bathroom.collections.length
+  });
+
   return (
     <>
       <section>
@@ -53,7 +61,7 @@ export default async function BathroomPage() {
               text: section.linkText ?? "",
               url: section.linkUrl ?? "",
             }}
-            images={section.images}
+            images={section.images ?? []}
           />
         </section>
       ))}
@@ -66,7 +74,7 @@ export default async function BathroomPage() {
               text: collection.linkText ?? "",
               url: collection.linkUrl ?? "",
             }}
-            images={collection.images}
+            images={collection.images ?? []}
           />
         </section>
       ))}

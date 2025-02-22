@@ -1,8 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import type React from "react"
-
 import { useState, useCallback } from "react"
 import type { MainSection } from "@/lib/db/schema"
 import { Button } from "@/components/ui/button"
@@ -12,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { saveMainSections } from "@/actions/inserts"
+import { Label } from "@/components/ui/label"
+import Image from "next/image"
 
 type SectionType = "intro" | "banner" | "feature" | "collections" | "showcase"
 
@@ -38,7 +38,7 @@ export function MainSectionsManager({ initialSections }: MainSectionsManagerProp
   )
 
   const handleImageUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>, field: "mainImage" | "imageBlockSrcs") => {
+    async (e: React.ChangeEvent<HTMLInputElement>, field: "mainImage" | "imageBlockSrcs", index?: number) => {
       const file = e.target.files?.[0]
       if (file) {
         const reader = new FileReader()
@@ -46,6 +46,10 @@ export function MainSectionsManager({ initialSections }: MainSectionsManagerProp
           const base64String = reader.result as string
           if (field === "mainImage") {
             updateSection(field, base64String)
+          } else if (index !== undefined) {
+            const newImageBlockSrcs = [...(sections[currentSection]?.imageBlockSrcs || [])]
+            newImageBlockSrcs[index] = base64String
+            updateSection("imageBlockSrcs", newImageBlockSrcs)
           } else {
             updateSection("imageBlockSrcs", [...(sections[currentSection]?.imageBlockSrcs || []), base64String])
             updateSection("imageBlockAlts", [...(sections[currentSection]?.imageBlockAlts || []), ""])
@@ -90,99 +94,345 @@ export function MainSectionsManager({ initialSections }: MainSectionsManagerProp
     e.preventDefault()
     try {
       await saveMainSections(Object.values(sections).filter((section): section is MainSection => section !== null))
-      toast({ title: "Success", description: "Main sections saved successfully" })
+      toast({ title: "Успех", description: "Секции сохранены успешно" })
       router.refresh()
     } catch (error) {
       console.error("Error saving main sections:", error)
-      toast({ title: "Error", description: "Failed to save main sections", variant: "destructive" })
+      toast({ title: "Ошибка", description: "Не удалось сохранить секции", variant: "destructive" })
     }
   }
 
   const currentSectionData = sections[currentSection]
 
+  const createNewSection = (type: SectionType) => {
+    setSections(prev => ({
+      ...prev,
+      [type]: {
+        id: 0,
+        section: type,
+        title: "",
+        description: "",
+        linkName: "",
+        linkUrl: "",
+        mainImage: null,
+        imageBlockSrcs: [],
+        imageBlockAlts: [],
+        imageBlockDescs: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    }))
+    setCurrentSection(type)
+  }
+
+  const renderSectionFields = () => {
+    if (!currentSectionData) return null
+
+    switch (currentSection) {
+      case "intro":
+        return (
+          <>
+            <div className="space-y-4">
+              <div>
+                <Label>Заголовок</Label>
+                <Input
+                  value={currentSectionData.title || ""}
+                  onChange={(e) => updateSection("title", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Описание</Label>
+                <Textarea
+                  value={currentSectionData.description || ""}
+                  onChange={(e) => updateSection("description", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Текст ссылки</Label>
+                <Input
+                  value={currentSectionData.linkName || ""}
+                  onChange={(e) => updateSection("linkName", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>URL ссылки</Label>
+                <Input
+                  value={currentSectionData.linkUrl || ""}
+                  onChange={(e) => updateSection("linkUrl", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Главное изображение</Label>
+                <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "mainImage")} />
+                {currentSectionData.mainImage && (
+                  <Image
+                    src={currentSectionData.mainImage}
+                    alt="Preview"
+                    width={300}
+                    height={300}
+                    className="mt-2 max-w-xs"
+                  />
+                )}
+              </div>
+              <div>
+                <Label>Блок изображений</Label>
+                <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "imageBlockSrcs")} />
+                {currentSectionData.imageBlockSrcs?.map((src, index) => (
+                  <div key={index} className="mt-4 p-4 border rounded">
+                    <Image
+                      src={src}
+                      alt={currentSectionData.imageBlockAlts?.[index] || ""}
+                      width={300}
+                      height={300}
+                      className="max-w-xs mb-2"
+                    />
+                    <Button type="button" onClick={() => removeImageBlock(index)} variant="destructive">
+                      Удалить изображение
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )
+
+      case "banner":
+        return (
+          <>
+            <div className="space-y-4">
+              <div>
+                <Label>Текст ссылки</Label>
+                <Input
+                  value={currentSectionData.linkName || ""}
+                  onChange={(e) => updateSection("linkName", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>URL ссылки</Label>
+                <Input
+                  value={currentSectionData.linkUrl || ""}
+                  onChange={(e) => updateSection("linkUrl", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Главное изображение</Label>
+                <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "mainImage")} />
+                {currentSectionData.mainImage && (
+                  <Image
+                    src={currentSectionData.mainImage}
+                    alt="Preview"
+                    width={300}
+                    height={300}
+                    className="mt-2 max-w-xs"
+                  />
+                )}
+              </div>
+            </div>
+          </>
+        )
+
+      case "feature":
+        return (
+          <>
+            <div className="space-y-4">
+              <div>
+                <Label>Заголовок</Label>
+                <Input
+                  value={currentSectionData.title || ""}
+                  onChange={(e) => updateSection("title", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Описание</Label>
+                <Textarea
+                  value={currentSectionData.description || ""}
+                  onChange={(e) => updateSection("description", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Текст ссылки</Label>
+                <Input
+                  value={currentSectionData.linkName || ""}
+                  onChange={(e) => updateSection("linkName", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>URL ссылки</Label>
+                <Input
+                  value={currentSectionData.linkUrl || ""}
+                  onChange={(e) => updateSection("linkUrl", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Главное изображение</Label>
+                <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "mainImage")} />
+                {currentSectionData.mainImage && (
+                  <Image
+                    src={currentSectionData.mainImage}
+                    alt="Preview"
+                    width={300}
+                    height={300}
+                    className="mt-2 max-w-xs"
+                  />
+                )}
+              </div>
+            </div>
+          </>
+        )
+
+      case "collections":
+        return (
+          <>
+            <div className="space-y-4">
+              <div>
+                <Label>Заголовок</Label>
+                <Input
+                  value={currentSectionData.title || ""}
+                  onChange={(e) => updateSection("title", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Описание</Label>
+                <Textarea
+                  value={currentSectionData.description || ""}
+                  onChange={(e) => updateSection("description", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Текст ссылки</Label>
+                <Input
+                  value={currentSectionData.linkName || ""}
+                  onChange={(e) => updateSection("linkName", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>URL ссылки</Label>
+                <Input
+                  value={currentSectionData.linkUrl || ""}
+                  onChange={(e) => updateSection("linkUrl", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Блок изображений</Label>
+                <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "imageBlockSrcs")} />
+                {currentSectionData.imageBlockSrcs?.map((src, index) => (
+                  <div key={index} className="mt-4 p-4 border rounded">
+                    <Image
+                      src={src}
+                      alt={currentSectionData.imageBlockAlts?.[index] || ""}
+                      width={300}
+                      height={300}
+                      className="max-w-xs mb-2"
+                    />
+                    <Input
+                      value={currentSectionData.imageBlockAlts?.[index] || ""}
+                      onChange={(e) => updateImageBlock(index, "alt", e.target.value)}
+                      placeholder="Alt текст"
+                      className="mb-2"
+                    />
+                    <Input
+                      value={currentSectionData.imageBlockDescs?.[index] || ""}
+                      onChange={(e) => updateImageBlock(index, "desc", e.target.value)}
+                      placeholder="Описание"
+                      className="mb-2"
+                    />
+                    <Button type="button" onClick={() => removeImageBlock(index)} variant="destructive">
+                      Удалить изображение
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )
+
+      case "showcase":
+        return (
+          <>
+            <div className="space-y-4">
+              <div>
+                <Label>Заголовок</Label>
+                <Input
+                  value={currentSectionData.title || ""}
+                  onChange={(e) => updateSection("title", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Описание</Label>
+                <Textarea
+                  value={currentSectionData.description || ""}
+                  onChange={(e) => updateSection("description", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Текст ссылки</Label>
+                <Input
+                  value={currentSectionData.linkName || ""}
+                  onChange={(e) => updateSection("linkName", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>URL ссылки</Label>
+                <Input
+                  value={currentSectionData.linkUrl || ""}
+                  onChange={(e) => updateSection("linkUrl", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Блок изображений</Label>
+                <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "imageBlockSrcs")} />
+                {currentSectionData.imageBlockSrcs?.map((src, index) => (
+                  <div key={index} className="mt-4 p-4 border rounded">
+                    <Image
+                      src={src}
+                      alt={currentSectionData.imageBlockAlts?.[index] || ""}
+                      width={300}
+                      height={300}
+                      className="max-w-xs mb-2"
+                    />
+                    <Button type="button" onClick={() => removeImageBlock(index)} variant="destructive">
+                      Удалить изображение
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Select value={currentSection} onValueChange={(value: SectionType) => setCurrentSection(value)}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select a section" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="intro">Intro</SelectItem>
-          <SelectItem value="banner">Banner</SelectItem>
-          <SelectItem value="feature">Feature</SelectItem>
-          <SelectItem value="collections">Collections</SelectItem>
-          <SelectItem value="showcase">Showcase</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-4">
+        <Select value={currentSection} onValueChange={(value: SectionType) => setCurrentSection(value)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Выберите секцию" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="intro">Интро</SelectItem>
+            <SelectItem value="banner">Баннер</SelectItem>
+            <SelectItem value="feature">Особенности</SelectItem>
+            <SelectItem value="collections">Коллекции</SelectItem>
+            <SelectItem value="showcase">Витрина</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button type="submit">Сохранить все секции</Button>
+      </div>
 
-      {currentSectionData && (
-        <div className="space-y-4">
-          <Input
-            value={currentSectionData.title || ""}
-            onChange={(e) => updateSection("title", e.target.value)}
-            placeholder="Title"
-          />
-          <Textarea
-            value={currentSectionData.description || ""}
-            onChange={(e) => updateSection("description", e.target.value)}
-            placeholder="Description"
-          />
-          <Input
-            value={currentSectionData.linkName || ""}
-            onChange={(e) => updateSection("linkName", e.target.value)}
-            placeholder="Link Name"
-          />
-          <Input
-            value={currentSectionData.linkUrl || ""}
-            onChange={(e) => updateSection("linkUrl", e.target.value)}
-            placeholder="Link URL"
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Main Image</label>
-            <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "mainImage")} />
-            {currentSectionData.mainImage && (
-              <img src={currentSectionData.mainImage || "/placeholder.svg"} alt="Main" className="mt-2 max-w-xs" />
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Image Block</label>
-            <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "imageBlockSrcs")} />
-            {currentSectionData.imageBlockSrcs?.map((src, index) => (
-              <div key={index} className="mt-4 p-4 border rounded">
-                <img
-                  src={src || "/placeholder.svg"}
-                  alt={currentSectionData.imageBlockAlts?.[index] || ""}
-                  className="max-w-xs mb-2"
-                />
-                <Input
-                  value={currentSectionData.imageBlockAlts?.[index] || ""}
-                  onChange={(e) => updateImageBlock(index, "alt", e.target.value)}
-                  placeholder="Alt Text"
-                  className="mb-2"
-                />
-                <Textarea
-                  value={currentSectionData.imageBlockDescs?.[index] || ""}
-                  onChange={(e) => updateImageBlock(index, "desc", e.target.value)}
-                  placeholder="Description"
-                  className="mb-2"
-                />
-                <Button type="button" onClick={() => removeImageBlock(index)} variant="destructive">
-                  Remove Image
-                </Button>
-              </div>
-            ))}
-          </div>
-          <Input
-            type="number"
-            value={currentSectionData.order}
-            onChange={(e) => updateSection("order", Number.parseInt(e.target.value))}
-            placeholder="Order"
-          />
+      {!sections[currentSection] && (
+        <div className="p-4 border rounded">
+          <p className="mb-4">Секция &quot;{currentSection}&quot; не создана</p>
+          <Button
+            type="button"
+            onClick={() => createNewSection(currentSection)}
+          >
+            Создать секцию {currentSection}
+          </Button>
         </div>
       )}
 
-      <Button type="submit">Save All Sections</Button>
+      {renderSectionFields()}
     </form>
   )
 }
-

@@ -106,25 +106,59 @@ export const fetchCollectionById = async (id: number) => {
  * Fetches all sections for the main page
  */
 export const fetchMainPage = async () => {
-  const sections = {
-    intro: await db.query.mainSections.findFirst({
-      where: eq(mainSections.section, "intro"),
-    }),
-    banner: await db.query.mainSections.findFirst({
-      where: eq(mainSections.section, "banner"),
-    }),
-    feature: await db.query.mainSections.findFirst({
-      where: eq(mainSections.section, "feature"),
-    }),
-    collections: await db.query.mainSections.findFirst({
-      where: eq(mainSections.section, "collections"),
-    }),
-    showcase: await db.query.mainSections.findFirst({
-      where: eq(mainSections.section, "showcase"),
-    }),
-  };
+  console.log('Fetching main page data...');
 
-  return sections;
+  try {
+    // Сначала получим все секции для отладки
+    const allSections = await db.query.mainSections.findMany();
+    console.log('All main sections:', allSections);
+
+    const sections = {
+      intro: await db.query.mainSections.findFirst({
+        where: eq(mainSections.section, "intro"),
+      }),
+      banner: await db.query.mainSections.findFirst({
+        where: eq(mainSections.section, "banner"),
+      }),
+      feature: await db.query.mainSections.findFirst({
+        where: eq(mainSections.section, "feature"),
+      }),
+      collections: await db.query.mainSections.findFirst({
+        where: eq(mainSections.section, "collections"),
+      }),
+      showcase: await db.query.mainSections.findFirst({
+        where: eq(mainSections.section, "showcase"),
+      }),
+    };
+
+    console.log('Main Page Data:', {
+      intro: {
+        hasMainImage: !!sections.intro?.mainImage,
+        hasImageBlock: sections.intro?.imageBlockSrcs?.length,
+      },
+      banner: {
+        hasMainImage: !!sections.banner?.mainImage,
+        hasImageBlock: sections.banner?.imageBlockSrcs?.length,
+      },
+      feature: {
+        hasMainImage: !!sections.feature?.mainImage,
+        hasImageBlock: sections.feature?.imageBlockSrcs?.length,
+      },
+      collections: {
+        hasMainImage: !!sections.collections?.mainImage,
+        hasImageBlock: sections.collections?.imageBlockSrcs?.length,
+      },
+      showcase: {
+        hasMainImage: !!sections.showcase?.mainImage,
+        hasImageBlock: sections.showcase?.imageBlockSrcs?.length,
+      },
+    });
+
+    return sections;
+  } catch (error) {
+    console.error('Error fetching main page:', error);
+    throw error;
+  }
 };
 
 /**
@@ -138,19 +172,52 @@ export const fetchAboutPage = async () => {
  * Fetches content for the bathroom page, organized by section type
  */
 export const fetchBathroomPage = async () => {
-  return {
-    banner: await db.query.bathroomSections.findFirst({
-      where: eq(bathroomSections.section, "banner"),
-    }),
-    sections: await db.query.bathroomSections.findMany({
-      where: eq(bathroomSections.section, "section"),
-      orderBy: asc(bathroomSections.order),
-    }),
-    collections: await db.query.bathroomSections.findMany({
-      where: eq(bathroomSections.section, "collection"),
-      orderBy: asc(bathroomSections.order),
-    }),
-  };
+  console.log('Fetching bathroom page data...');
+
+  try {
+    // Сначала получим все секции для отладки
+    const allSections = await db.query.bathroomSections.findMany();
+    console.log('All bathroom sections:', allSections);
+
+    const data = {
+      banner: await db.query.bathroomSections.findFirst({
+        where: eq(bathroomSections.section, "banner"),
+      }),
+      sections: await db.query.bathroomSections.findMany({
+        where: eq(bathroomSections.section, "section"),
+        orderBy: asc(bathroomSections.order),
+      }),
+      collections: await db.query.bathroomSections.findMany({
+        where: eq(bathroomSections.section, "collection"),
+        orderBy: asc(bathroomSections.order),
+      }),
+    };
+
+    console.log('Bathroom Page Data:', {
+      banner: {
+        hasImage: !!data.banner?.image,
+        title: data.banner?.title,
+        section: data.banner?.section,
+      },
+      sections: data.sections.map(s => ({
+        id: s.id,
+        title: s.title,
+        section: s.section,
+        imagesCount: s.images?.length,
+      })),
+      collections: data.collections.map(c => ({
+        id: c.id,
+        title: c.title,
+        section: c.section,
+        imagesCount: c.images?.length,
+      })),
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching bathroom page:', error);
+    throw error;
+  }
 };
 
 /**

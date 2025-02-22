@@ -31,6 +31,20 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-semibold mb-2">Кухни</h2>
           <p className="text-gray-600">Управление страницей Кухни</p>
         </Link>
+        <Link
+          href="/admin/bathroom"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        >
+          <h2 className="text-xl font-semibold mb-2">Ванная</h2>
+          <p className="text-gray-600">Управление страницей Ванной</p>
+        </Link>
+        <Link
+          href="/admin/main"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        >
+          <h2 className="text-xl font-semibold mb-2">Главная Страница</h2>
+          <p className="text-gray-600">Управление главной страницей</p>
+        </Link>
       </div>
     </div>
   );

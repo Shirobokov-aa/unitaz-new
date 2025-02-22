@@ -15,6 +15,9 @@ interface BathSectionProps {
 }
 
 export default function BathShower({ title, description, link, images }: BathSectionProps) {
+  // Добавим проверку данных
+  console.log('BathShower props:', { title, description, link, imagesCount: images?.length });
+
   return (
     <section>
       <div className="max-w-1440 mx-auto lg:px-24 px-5 pt-48">
@@ -25,9 +28,14 @@ export default function BathShower({ title, description, link, images }: BathSec
         <div>
           <div className="flex gap-5 pt-20">
             <div className="flex gap-5">
-              {images.slice(0, 3).map((image, index) => (
+              {images?.slice(0, 3).map((image, index) => (
                 <div key={index} className="max-w-[434px] w-full max-h-[434px] h-full gap-5">
-                  <Image src={image.src || "/img/fallback-image.png"} alt={image.alt} width={434} height={434} />
+                  <Image
+                    src={image.src || "/img/fallback-image.png"}
+                    alt={image.alt}
+                    width={434}
+                    height={434}
+                  />
                 </div>
               ))}
             </div>

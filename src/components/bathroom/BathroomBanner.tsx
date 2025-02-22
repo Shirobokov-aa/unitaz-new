@@ -10,6 +10,8 @@ interface BannerProps {
 }
 
 export default function BathroomBanner({ image, title, description, link }: BannerProps) {
+  console.log('Banner props:', { image, title, description, link });
+
   return (
     <section>
       <div className="w-full h-[800px] relative mt-10">

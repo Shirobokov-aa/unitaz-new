@@ -303,46 +303,69 @@ export async function saveImageSlides(slides: ImageSlide[]) {
 export async function saveMainSections(sections: MainSection[]) {
   try {
     await db.transaction(async (tx) => {
+      // Получаем все существующие секции
+      const existingSections = await tx.select({ id: mainSections.id }).from(mainSections);
+      const existingIds = new Set(existingSections.map(section => section.id));
+
       for (const section of sections) {
-        if (section.id) {
-          // Update existing section
+        console.log('Processing main section:', {
+          id: section.id,
+          type: section.section,
+          hasMainImage: !!section.mainImage,
+          imageBlockCount: section.imageBlockSrcs?.length
+        });
+
+        if (existingIds.has(section.id)) {
+          // Обновляем существующую секцию
           await tx
             .update(mainSections)
             .set({
+              section: section.section,
               title: section.title,
               description: section.description,
+              mainImage: section.mainImage,
+              imageBlockSrcs: section.imageBlockSrcs || [],
+              imageBlockAlts: section.imageBlockAlts || [],
+              imageBlockDescs: section.imageBlockDescs || [],
               linkName: section.linkName,
               linkUrl: section.linkUrl,
-              mainImage: section.mainImage,
-              imageBlockSrcs: section.imageBlockSrcs,
-              imageBlockAlts: section.imageBlockAlts,
-              imageBlockDescs: section.imageBlockDescs,
               order: section.order,
               updatedAt: new Date(),
             })
             .where(eq(mainSections.id, section.id));
+          existingIds.delete(section.id);
         } else {
-          // Insert new section
+          // Создаем новую секцию
           await tx.insert(mainSections).values({
             section: section.section,
             title: section.title,
             description: section.description,
+            mainImage: section.mainImage,
+            imageBlockSrcs: section.imageBlockSrcs || [],
+            imageBlockAlts: section.imageBlockAlts || [],
+            imageBlockDescs: section.imageBlockDescs || [],
             linkName: section.linkName,
             linkUrl: section.linkUrl,
-            mainImage: section.mainImage,
-            imageBlockSrcs: section.imageBlockSrcs,
-            imageBlockAlts: section.imageBlockAlts,
-            imageBlockDescs: section.imageBlockDescs,
             order: section.order,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           });
         }
+      }
+
+      // Удаляем секции, которых больше нет
+      for (const id of existingIds) {
+        await tx.delete(mainSections).where(eq(mainSections.id, id));
       }
     });
 
     return { success: true, message: "Main sections saved successfully" };
   } catch (error) {
     console.error("Error saving main sections:", error);
-    return { success: false, message: "Failed to save main sections" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to save main sections"
+    };
   }
 }
 
@@ -385,13 +408,25 @@ export async function saveAboutPage(data: AboutPage) {
 export async function saveBathroomSections(sections: BathroomSection[]) {
   try {
     await db.transaction(async (tx) => {
-      // Get all existing section IDs
       const existingSections = await tx.select({ id: bathroomSections.id }).from(bathroomSections);
       const existingIds = new Set(existingSections.map((section) => section.id));
 
       for (const section of sections) {
+        // Проверяем тип секции
+        if (!["banner", "section", "collection"].includes(section.section)) {
+          console.error(`Invalid section type: ${section.section}`);
+          continue;
+        }
+
+        console.log('Processing section:', {
+          id: section.id,
+          type: section.section,
+          title: section.title,
+          hasImage: !!section.image,
+          imagesCount: section.images?.length
+        });
+
         if (existingIds.has(section.id)) {
-          // Update existing section
           await tx
             .update(bathroomSections)
             .set({
@@ -400,7 +435,7 @@ export async function saveBathroomSections(sections: BathroomSection[]) {
               description: section.description,
               name: section.name,
               image: section.image,
-              images: section.images,
+              images: section.images || [], // Убедимся, что images не undefined
               linkText: section.linkText,
               linkUrl: section.linkUrl,
               order: section.order,
@@ -409,22 +444,23 @@ export async function saveBathroomSections(sections: BathroomSection[]) {
             .where(eq(bathroomSections.id, section.id));
           existingIds.delete(section.id);
         } else {
-          // Insert new section
           await tx.insert(bathroomSections).values({
             section: section.section,
             title: section.title,
             description: section.description,
             name: section.name,
             image: section.image,
-            images: section.images,
+            images: section.images || [], // Убедимся, что images не undefined
             linkText: section.linkText,
             linkUrl: section.linkUrl,
             order: section.order,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           });
         }
       }
 
-      // Delete sections that are no longer present
+      // Удаляем секции, которых больше нет
       for (const id of existingIds) {
         await tx.delete(bathroomSections).where(eq(bathroomSections.id, id));
       }
@@ -433,7 +469,10 @@ export async function saveBathroomSections(sections: BathroomSection[]) {
     return { success: true, message: "Bathroom sections saved successfully" };
   } catch (error) {
     console.error("Error saving bathroom sections:", error);
-    return { success: false, message: "Failed to save bathroom sections" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to save bathroom sections"
+    };
   }
 }
 
