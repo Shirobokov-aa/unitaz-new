@@ -1,0 +1,1 @@
+ALTER TABLE "image_slides" ADD COLUMN "title_url" text DEFAULT '' NOT NULL;

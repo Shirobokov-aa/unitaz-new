@@ -1,21 +1,21 @@
 services:
-  # simpllo:
-  #   container_name: simpllo-web
-  #   build: .
-  #   ports:
-  #     - "127.0.0.1:3000:3000"
-  #   environment:
-  #     NODE_ENV: production
-  #     DB_PASSWORD: "*a13*qgxZMe!Nk@8Om46$%7&"
-  #     DB_USERNAME: "postgres"
-  #     DB_DATABASE: "simpllo"
-  #     DB_HOST: "simpllo-database"
-  #     DB_PORT: "5432"
-  #     NEXT_PUBLIC_API_URL: "https://simpllo.ru"
-  #   depends_on:
-  #     - database
-  #   networks:
-  #     - simpllo
+  abelsberg:
+    container_name: abelsberg-web
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      DB_PASSWORD: "123"
+      DB_USERNAME: "postgres"
+      DB_DATABASE: "abelsberg"
+      DB_HOST: "abelsberg_database"
+      DB_PORT: "5432"
+      # NEXT_PUBLIC_API_URL: "https://simpllo.ru"
+    depends_on:
+      - database_abelsberg
+    networks:
+      - simpllo
 
   database_abelsberg:
     container_name: database_abelsberg
@@ -34,10 +34,10 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - ./data/abelsberg:/var/lib/postgresql/data
-#     networks:
-#       - simpllo
+    networks:
+      - simpllo
 
-# networks:
-#   simpllo:
-#     name: simpllo
-#     driver: bridge
+networks:
+  simpllo:
+    name: simpllo
+    driver: bridge

@@ -14,6 +14,7 @@ import {
   // type CatalogProduct,
   // type CatalogFilter,
   // catalogBanner,
+  imageSlides,
 } from "@/lib/db/schema";
 import { asc, eq } from "drizzle-orm";
 
@@ -36,7 +37,12 @@ export const fetchCategories = async () => {
  * Fetches all image slides
  */
 export const fetchSlides = async (): Promise<ImageSlide[]> => {
-  return db.query.imageSlides.findMany();
+  console.log('Fetching slides...');
+  const slides = await db.query.imageSlides.findMany({
+    orderBy: asc(imageSlides.id)
+  });
+  console.log('Fetched slides:', slides); // Добавим лог для проверки данных
+  return slides;
 };
 
 /**

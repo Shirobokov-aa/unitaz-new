@@ -42,6 +42,7 @@ export const imageSlides = pgTable("image_slides", {
   desktopImage: text("desktop_image").notNull(),
   mobileImage: text("mobile_image").notNull(),
   title: text("title").notNull(),
+  titleUrl: text("title_url").notNull().default(''),
 });
 
 export const mainSections = pgTable("main_sections", {

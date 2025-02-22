@@ -10,19 +10,24 @@ const nextConfig: NextConfig = {
     }
   },
   webpack: (config) => {
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      crypto: false,
-      dns: false,
-      net: false,
-      tls: false,
-      fs: false,
-    };
-
-    config.externals = [...(config.externals || []), "pg-native"];
+    config.externals = "commonjs argon2";
 
     return config;
-  },
+  }
+  // webpack: (config) => {
+  //   config.resolve.fallback = {
+  //     ...config.resolve.fallback,
+  //     crypto: false,
+  //     dns: false,
+  //     net: false,
+  //     tls: false,
+  //     fs: false,
+  //   };
+
+  //   config.externals = [...(config.externals || []), "pg-native"];
+
+  //   return config;
+  // },
 };
 
 export default nextConfig;

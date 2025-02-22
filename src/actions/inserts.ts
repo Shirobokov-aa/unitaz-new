@@ -279,43 +279,44 @@ export async function saveCategories(categoriesData: CategoryWithSubCategories[]
 
 export async function saveImageSlides(slides: ImageSlide[]) {
   try {
+    console.log('Saving slides:', slides); // Для отладки
     await db.transaction(async (tx) => {
-      // Get all existing slide IDs
-      const existingSlides = await tx.select({ id: imageSlides.id }).from(imageSlides);
-      const existingIds = new Set(existingSlides.map((slide) => slide.id));
+      const existingSlides = await tx.select().from(imageSlides);
+      const existingIds = new Set(existingSlides.map(slide => slide.id));
 
       for (const slide of slides) {
+        const slideData = {
+          desktopImage: slide.desktopImage,
+          mobileImage: slide.mobileImage,
+          title: slide.title,
+          titleUrl: slide.titleUrl || '/', // Используем уникальный URL для каждого слайда
+        };
+
         if (existingIds.has(slide.id)) {
-          // Update existing slide
+          // Обновляем существующий слайд
           await tx
             .update(imageSlides)
-            .set({
-              desktopImage: slide.desktopImage,
-              mobileImage: slide.mobileImage,
-              title: slide.title,
-            })
+            .set(slideData)
             .where(eq(imageSlides.id, slide.id));
           existingIds.delete(slide.id);
         } else {
-          // Insert new slide
-          await tx.insert(imageSlides).values({
-            desktopImage: slide.desktopImage,
-            mobileImage: slide.mobileImage,
-            title: slide.title,
-          });
+          // Создаем новый слайд
+          await tx.insert(imageSlides).values(slideData);
         }
       }
 
-      // Delete slides that are no longer present
+      // Удаляем слайды, которых больше нет
       for (const id of existingIds) {
         await tx.delete(imageSlides).where(eq(imageSlides.id, id));
       }
     });
 
-    return { success: true, message: "Image slides saved successfully" };
+    revalidatePath('/');
+    revalidatePath('/admin/slides');
+    return { success: true };
   } catch (error) {
-    console.error("Error saving image slides:", error);
-    return { success: false, message: "Failed to save image slides" };
+    console.error("Error saving slides:", error);
+    return { success: false, error };
   }
 }
 

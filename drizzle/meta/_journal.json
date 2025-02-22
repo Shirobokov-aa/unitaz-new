@@ -15,6 +15,20 @@
       "when": 1740243425838,
       "tag": "0001_calm_snowbird",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1740247041034,
+      "tag": "0002_minor_brood",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1740247128050,
+      "tag": "0003_panoramic_whistler",
+      "breakpoints": true
     }
   ]
 }

@@ -22,30 +22,27 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "./lib/auth";
+
 
 // Укажем конфигурацию для Edge Runtime
 export const config = {
   matcher: ["/admin/:path*", "/login"],
-  runtime: 'edge',
 };
 
 export async function middleware(request: NextRequest) {
   try {
     // Получаем токен с secret из .env
-    const token = await getToken({
-      req: request,
-      secret: process.env.AUTH_SECRET,
-    });
+    const session = await auth();
 
     // Защита админ роутов
-    if (!token && request.nextUrl.pathname.startsWith("/admin")) {
+    if (!session && request.nextUrl.pathname.startsWith("/admin")) {
       const url = new URL("/login", request.url);
       return NextResponse.redirect(url);
     }
 
     // Редирект с логина если авторизован
-    if (token && request.nextUrl.pathname === "/login") {
+    if (session && request.nextUrl.pathname === "/login") {
       const url = new URL("/admin", request.url);
       return NextResponse.redirect(url);
     }
