@@ -10,23 +10,26 @@ import {
   CategoryWithSubCategories,
   ImageSlide,
   imageSlides,
-  // InsertCategory,
-  // InsertSubCategory,
   KitchenSection,
   kitchenSections,
   MainSection,
   mainSections,
   subCategories,
-  collectionPreviews, // Добавьте этот импорт
-  CollectionPreview, // И этот
-
+  collectionPreviews,
+  CollectionPreview,
   collections,
   collectionSections,
   Collection,
   CollectionSection,
-
+  catalogProducts,
+  catalogFilters,
+  catalogBanner,
+  type InsertCatalogProduct,
+  type CatalogFilter,
+  type CatalogBanner,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 type CollectionWithSections = Collection & { sections: CollectionSection[] };
 
@@ -553,5 +556,115 @@ export async function saveKitchenSections(sections: KitchenSection[]) {
   } catch (error) {
     console.error("Error saving kitchen sections:", error);
     throw error;
+  }
+}
+
+export async function saveCatalogProduct(product: InsertCatalogProduct) {
+  try {
+    let savedProduct;
+
+    await db.transaction(async (tx) => {
+      if (product.id) {
+        [savedProduct] = await tx
+          .update(catalogProducts)
+          .set({
+            ...product,
+            updatedAt: new Date(),
+          })
+          .where(eq(catalogProducts.id, product.id))
+          .returning();
+      } else {
+        [savedProduct] = await tx
+          .insert(catalogProducts)
+          .values({
+            ...product,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning();
+      }
+    });
+
+    // Добавляем ревалидацию для страницы каталога
+    revalidatePath('/catalog');
+    revalidatePath(`/catalog/${product.id}`);
+    revalidatePath('/admin/catalog');
+    revalidatePath(`/admin/catalog/${product.id}`);
+
+    return {
+      success: true,
+      product: savedProduct
+    };
+  } catch (error) {
+    console.error("Error saving product:", error);
+    return { success: false, error };
+  }
+}
+
+export async function saveCatalogFilters(filters: CatalogFilter[]) {
+  try {
+    await db.transaction(async (tx) => {
+      const existingFilters = await tx.select().from(catalogFilters);
+      const existingIds = new Set(existingFilters.map(filter => filter.id));
+
+      for (const filter of filters) {
+        if (existingIds.has(filter.id)) {
+          await tx
+            .update(catalogFilters)
+            .set(filter)
+            .where(eq(catalogFilters.id, filter.id));
+          existingIds.delete(filter.id);
+        } else {
+          await tx.insert(catalogFilters).values(filter);
+        }
+      }
+
+      for (const id of existingIds) {
+        await tx.delete(catalogFilters).where(eq(catalogFilters.id, id));
+      }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving filters:", error);
+    return { success: false, error };
+  }
+}
+
+export async function deleteCatalogProduct(id: number) {
+  try {
+    await db.delete(catalogProducts).where(eq(catalogProducts.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return { success: false, error };
+  }
+}
+
+export async function saveCatalogBanner(banner: Omit<CatalogBanner, 'id' | 'createdAt' | 'updatedAt'>) {
+  try {
+    const existingBanner = await db.query.catalogBanner.findFirst();
+
+    await db.transaction(async (tx) => {
+      if (existingBanner) {
+        await tx
+          .update(catalogBanner)
+          .set({
+            ...banner,
+            updatedAt: new Date(),
+          })
+          .where(eq(catalogBanner.id, existingBanner.id));
+      } else {
+        await tx.insert(catalogBanner).values({
+          ...banner,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving catalog banner:", error);
+    return { success: false, error };
   }
 }

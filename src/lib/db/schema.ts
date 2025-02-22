@@ -246,3 +246,81 @@ export const sectionsRelations = relations(collectionSections, ({ one }) => ({
     references: [collections.id],
   }),
 }));
+
+
+// ============================================================================
+
+// Catalog System
+export const catalogProducts = pgTable("catalog_products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  article: text("article").notNull(),
+  price: integer("price").notNull(),
+  description: text("description"),
+  images: jsonb("images").$type<string[]>().notNull().default([]),
+  colors: jsonb("colors").$type<{
+    name: string;
+    code: string;
+  }[]>().notNull().default([]),
+  characteristics: jsonb("characteristics").$type<{
+    name: string;
+    value: string;
+  }[]>().notNull().default([]),
+  technicalDocs: jsonb("technical_docs").$type<{
+    name: string;
+    url: string;
+  }[]>().notNull().default([]),
+  categoryId: integer("category_id").references(() => categories.id),
+  subCategoryId: integer("sub_category_id").references(() => subCategories.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const catalogFilters = pgTable("catalog_filters", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  values: jsonb("values").$type<{
+    label: string;
+    value: string;
+  }[]>().notNull(),
+  categoryId: integer("category_id").references(() => categories.id),
+  order: integer("order").notNull().default(0),
+});
+
+export const catalogBanner = pgTable("catalog_banner", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  image: text("image").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  linkText: text("link_text"),
+  linkUrl: text("link_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Types
+export type CatalogProduct = typeof catalogProducts.$inferSelect;
+export type InsertCatalogProduct = typeof catalogProducts.$inferInsert;
+export type CatalogFilter = typeof catalogFilters.$inferSelect;
+export type CatalogBanner = typeof catalogBanner.$inferSelect;
+
+// Relations
+export const catalogProductsRelations = relations(catalogProducts, ({ one }) => ({
+  category: one(categories, {
+    fields: [catalogProducts.categoryId],
+    references: [categories.id],
+  }),
+  subCategory: one(subCategories, {
+    fields: [catalogProducts.subCategoryId],
+    references: [subCategories.id],
+  }),
+}));
+
+export const catalogFiltersRelations = relations(catalogFilters, ({ one }) => ({
+  category: one(categories, {
+    fields: [catalogFilters.categoryId],
+    references: [categories.id],
+  }),
+}));

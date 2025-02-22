@@ -9,6 +9,11 @@ import {
   collectionSections,
   type CollectionWithSections,
   type ImageSlide,
+  catalogProducts,
+  catalogFilters,
+  // type CatalogProduct,
+  // type CatalogFilter,
+  // catalogBanner,
 } from "@/lib/db/schema";
 import { asc, eq } from "drizzle-orm";
 
@@ -254,4 +259,55 @@ export const fetchKitchenPage = async () => {
     console.error('Error fetching kitchen page:', error);
     throw error;
   }
+};
+
+// ============================================================================
+// Catalog Fetchers
+// ============================================================================
+
+export const fetchCatalogProducts = async () => {
+  return db.query.catalogProducts.findMany({
+    with: {
+      category: true,
+      subCategory: true,
+    },
+    orderBy: asc(catalogProducts.createdAt),
+  });
+};
+
+export async function fetchProductById(id: number) {
+  try {
+    if (!id || isNaN(id)) {
+      return null;
+    }
+
+    const product = await db.query.catalogProducts.findFirst({
+      where: eq(catalogProducts.id, id),
+      with: {
+        category: true,
+        subCategory: true,
+      },
+    });
+
+    return product;
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return null;
+  }
+}
+
+export const fetchCatalogFilters = async (categoryId?: number) => {
+  if (categoryId) {
+    return db.query.catalogFilters.findMany({
+      where: eq(catalogFilters.categoryId, categoryId),
+      orderBy: asc(catalogFilters.order),
+    });
+  }
+  return db.query.catalogFilters.findMany({
+    orderBy: asc(catalogFilters.order),
+  });
+};
+
+export const fetchCatalogBanner = async () => {
+  return db.query.catalogBanner.findFirst();
 };
