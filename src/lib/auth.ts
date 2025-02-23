@@ -78,7 +78,13 @@ export const authConfig = {
   },
 } as NextAuthConfig;
 
-export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
+const nextAuthInstance = NextAuth(authConfig);
+export const handlers = {
+  GET: nextAuthInstance.handlers.GET,
+  POST: nextAuthInstance.handlers.POST,
+};
+
+export const { signIn, signOut, auth } = nextAuthInstance;
 
 
 

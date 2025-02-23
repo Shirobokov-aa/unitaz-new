@@ -1,3 +1,5 @@
+"use server"
+
 import { db } from "@/lib/db";
 import * as argon2 from "argon2";
 import { randomBytes } from "crypto";
