@@ -18,6 +18,9 @@ import {
   collectionPreviews,
   collections,
   collectionSections,
+  catalogProducts,
+  catalogFilters,
+  catalogBanner,
 } from "./schema";
 
 
@@ -53,6 +56,9 @@ async function seed(): Promise<void> {
     await db.delete(categories);
     await db.delete(mainSections);
     await db.delete(aboutPage);
+    await db.delete(catalogProducts);
+    await db.delete(catalogFilters);
+    await db.delete(catalogBanner);
 
     const existingUser = await db.query.authUsers.findFirst({
       where: eq(authUsers.username, "admin")
@@ -247,6 +253,86 @@ async function seed(): Promise<void> {
       order: 1,
     },
   ]);
+
+  // Catalog Products
+  await db.insert(catalogProducts).values([
+    {
+      name: "Классическая раковина",
+      article: "BT001",
+      price: 25000,
+      description: "Элегантная раковина в классическом стиле",
+      images: ["/catalog/bt001-1.jpg", "/catalog/bt001-2.jpg"],
+      colors: [
+        { name: "Белый", code: "#FFFFFF" },
+        { name: "Бежевый", code: "#F5F5DC" }
+      ],
+      characteristics: [
+        { name: "Материал", value: "Керамика" },
+        { name: "Размер", value: "60x45x85 см" }
+      ],
+      technicalDocs: [
+        { name: "Инструкция", url: "/docs/bt001-manual.pdf" },
+        { name: "Сертификат", url: "/docs/bt001-cert.pdf" }
+      ],
+      categoryId: 1, // Ванные комнаты
+      subCategoryId: 1, // Классические ванные
+    },
+    {
+      name: "Современная кухонная мойка",
+      article: "KT001",
+      price: 35000,
+      description: "Стильная мойка для современной кухни",
+      images: ["/catalog/kt001-1.jpg", "/catalog/kt001-2.jpg"],
+      colors: [
+        { name: "Сталь", code: "#C0C0C0" },
+        { name: "Графит", code: "#474747" }
+      ],
+      characteristics: [
+        { name: "Материал", value: "Нержавеющая сталь" },
+        { name: "Размер", value: "80x50x20 см" }
+      ],
+      technicalDocs: [
+        { name: "Инструкция", url: "/docs/kt001-manual.pdf" }
+      ],
+      categoryId: 2, // Кухни
+      subCategoryId: 3, // Кухни в стиле лофт
+    }
+  ]);
+
+  // Catalog Filters
+  await db.insert(catalogFilters).values([
+    {
+      name: "Цвет",
+      type: "color",
+      values: [
+        { label: "Белый", value: "white" },
+        { label: "Бежевый", value: "beige" },
+        { label: "Сталь", value: "steel" }
+      ],
+      categoryId: 1,
+      order: 1
+    },
+    {
+      name: "Материал",
+      type: "select",
+      values: [
+        { label: "Керамика", value: "ceramic" },
+        { label: "Нержавеющая сталь", value: "steel" }
+      ],
+      categoryId: 2,
+      order: 1
+    }
+  ]);
+
+  // Catalog Banner
+  await db.insert(catalogBanner).values({
+    name: "Летняя коллекция",
+    image: "/catalog/banner.jpg",
+    title: "Новинки сезона",
+    description: "Откройте для себя нашу новую коллекцию",
+    linkText: "Подробнее",
+    linkUrl: "/catalog/summer-collection"
+  });
 
   console.log("База данных успешно заполнена");
 } catch (error) {

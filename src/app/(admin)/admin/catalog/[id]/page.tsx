@@ -30,7 +30,10 @@ export default async function AdminProductPage({ params }: ProductPageProps) {
 
     return (
       <Suspense fallback={<div>Loading...</div>}>
-        <AdminProductContent initialProduct={product} categories={categories} />
+        <AdminProductContent
+          initialProduct={product}
+          categories={categories}
+        />
       </Suspense>
     );
   } catch (error) {
