@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import BathroomContent from "./BathroomContent";
+export const dynamic = 'force-dynamic';
+
 
 export default function Bathroom() {
   return (

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   experimental: {
     serverActions: {
       // Устанавливаем ограничение размера тела запроса в 5MB
@@ -17,10 +18,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // webpack: (config) => {
-  //   config.externals = "commonjs argon2";
-  //   return config;
-  // }
+  // Увеличиваем таймаут для статической генерации
+  staticPageGenerationTimeout: 120,
+  // Отключаем генерацию статических страниц для ошибок
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
 
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -41,7 +43,9 @@ const nextConfig: NextConfig = {
 
     config.externals = [
       ...(config.externals || []),
-      { argon2: 'argon2' }
+      'pg',
+      'pg-native',
+      'argon2'
     ];
 
     return config;

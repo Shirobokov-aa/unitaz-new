@@ -13,6 +13,8 @@ import CollectionDetailSection3 from "@/components/collection-detail/CollectionD
 import CollectionDetailSection4 from "@/components/collection-detail/CollectionDetailSection4";
 import { fetchCollectionById } from "@/actions/query";
 import { notFound } from "next/navigation";
+// export const dynamic = 'force-dynamic';
+
 
 // interface ContentProps {
 //   params: Promise<{ id: string }>;

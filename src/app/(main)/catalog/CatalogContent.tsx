@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Slash } from "lucide-react";
 import CatalogBanner from "@/components/cataog/CatalogBanner";
+// export const dynamic = 'force-dynamic';
+
 
 
 export default async function CatalogContent() {

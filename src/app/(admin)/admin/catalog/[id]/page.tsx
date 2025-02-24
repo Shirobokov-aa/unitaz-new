@@ -1,17 +1,18 @@
+import { Suspense } from "react";
 import { fetchProductById, fetchCategories } from "@/actions/query";
-import { ProductEditor } from "@/components/admin/product-editor";
 import { notFound } from "next/navigation";
+import { AdminProductContent } from "@/components/pages/admin-product";
+
+export const dynamic = 'force-dynamic';
 
 interface ProductPageProps {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
 export default async function AdminProductPage({ params }: ProductPageProps) {
-  // Дожидаемся получения params
-  const resolvedParams = await params;
-  const productId = parseInt(resolvedParams.id);
+  const productId = parseInt(params.id);
 
   if (isNaN(productId)) {
     notFound();
@@ -28,13 +29,9 @@ export default async function AdminProductPage({ params }: ProductPageProps) {
     }
 
     return (
-      <div className="container mx-auto py-10">
-        <h1 className="text-3xl font-bold mb-6">Детальное редактирование товара</h1>
-        <ProductEditor
-          initialProduct={product}
-          categories={categories}
-        />
-      </div>
+      <Suspense fallback={<div>Loading...</div>}>
+        <AdminProductContent initialProduct={product} categories={categories} />
+      </Suspense>
     );
   } catch (error) {
     console.error("Error loading product:", error);

@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import CatalogContent from "./CatalogContent";
+export const dynamic = 'force-dynamic';
+
 
 export default function Catalog() {
   return (

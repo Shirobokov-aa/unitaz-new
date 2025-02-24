@@ -9,6 +9,8 @@ import { Slash } from "lucide-react";
 import AboutBanner from "@/components/about/AboutBanner";
 import AboutShower from "@/components/about/AboutShower";
 import { fetchAboutPage } from "@/actions/query";
+// export const dynamic = 'force-dynamic';
+
 
 export default async function AboutPage() {
   const about = await fetchAboutPage();

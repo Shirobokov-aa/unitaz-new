@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import KitchenContent from "./KitchenContent";
+export const dynamic = 'force-dynamic';
+
 
 export default function Kitchen() {
   return (

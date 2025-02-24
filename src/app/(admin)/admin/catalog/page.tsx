@@ -1,28 +1,15 @@
-import { fetchCatalogProducts, fetchCategories, fetchCatalogBanner } from "@/actions/query";
-import { CatalogManager } from "@/components/admin/catalog-manager";
-import { CatalogBannerManager } from "@/components/admin/catalog-banner-manager";
+import { Suspense } from "react";
+import { fetchCategories } from "@/actions/query";
+import { AdminCatalogContent } from "@/components/pages/admin-catalog";
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminCatalogPage() {
-  const [products, categories, banner] = await Promise.all([
-    fetchCatalogProducts(),
-    fetchCategories(),
-    fetchCatalogBanner(),
-  ]);
+  const categories = await fetchCategories();
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Управление каталогом</h1>
-
-      <div className="mb-10">
-        <CatalogBannerManager initialBanner={banner || undefined} />
-      </div>
-
-      <div>
-        <CatalogManager
-          initialProducts={products}
-          categories={categories}
-        />
-      </div>
-    </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminCatalogContent initialCategories={categories} />
+    </Suspense>
   );
 }

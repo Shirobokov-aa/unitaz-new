@@ -11,6 +11,8 @@ import KitchenCollection from "@/components/kitchen/KitchenCollection";
 import KitchenBanner from "@/components/kitchen/KitchenBanner";
 import KitchenShower from "@/components/kitchen/KitchenShower";
 import { fetchKitchenPage } from "@/actions/query";
+// export const dynamic = 'force-dynamic';
+
 
 export default async function KitchenPage() {
   const kitchen = await fetchKitchenPage();

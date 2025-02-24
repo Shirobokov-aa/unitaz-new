@@ -1,13 +1,12 @@
-import { fetchBathroomPage } from "@/actions/query";
-import { BathroomPageManager } from "@/components/admin/bathroom-page-manager";
+import BathroomPageManagementPageContent from "@/components/pages/admin-bathroom";
+import { Suspense } from "react";
 
-export default async function BathroomPageManagementPage() {
-  const bathroomPageData = await fetchBathroomPage();
+export const dynamic = 'force-dynamic';
 
-  return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Bathroom Page Management</h1>
-      <BathroomPageManager initialData={bathroomPageData} />
-    </div>
-  );
+export default function BathroomPage() {
+  return(
+    <Suspense fallback={<div>Loading...</div>}>
+      <BathroomPageManagementPageContent />
+    </Suspense>
+  )
 }

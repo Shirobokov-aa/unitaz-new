@@ -10,6 +10,8 @@ import {
 import { Slash } from "lucide-react";
 import BathroomCollection from "@/components/bathroom/BathroomCollection";
 import { fetchBathroomPage } from "@/actions/query";
+// export const dynamic = 'force-dynamic';
+
 
 export default async function BathroomPage() {
   const bathroom = await fetchBathroomPage();

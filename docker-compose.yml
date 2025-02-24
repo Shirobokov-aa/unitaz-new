@@ -11,11 +11,14 @@ services:
       DB_DATABASE: "abelsberg"
       DB_HOST: "abelsberg_database"
       DB_PORT: "5432"
+      DATABASE_URL: "postgresql://postgres:123@abelsberg_database:5432/abelsberg"
+      AUTH_SECRET: "jXn2r5u8x/A?D(G+KbPeShVmYq3t6w9z"
+      NEXTAUTH_URL: https://abelsberg.com
       # NEXT_PUBLIC_API_URL: "https://simpllo.ru"
     depends_on:
       - database_abelsberg
     networks:
-      - simpllo
+      - abelsberg
 
   database_abelsberg:
     container_name: database_abelsberg
@@ -30,14 +33,14 @@ services:
     #   driver: syslog
     #   options:
     #     tag: swp/database
-    ports:
-      - "127.0.0.1:5432:5432"
+    # ports:
+    #   - "127.0.0.1:5432:5432"
     volumes:
       - ./data/abelsberg:/var/lib/postgresql/data
     networks:
-      - simpllo
+      - abelsberg
 
 networks:
-  simpllo:
-    name: simpllo
+  abelsberg:
+    name: abelsberg
     driver: bridge
