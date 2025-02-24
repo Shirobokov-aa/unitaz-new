@@ -1,3 +1,50 @@
+# services:
+#   abelsberg:
+#     container_name: abelsberg-web
+#     build: .
+#     ports:
+#       - "127.0.0.1:3000:3000"
+#     environment:
+#       NODE_ENV: production
+#       DB_PASSWORD: "123"
+#       DB_USERNAME: "postgres"
+#       DB_DATABASE: "abelsberg"
+#       DB_HOST: "abelsberg_database"
+#       DB_PORT: "5432"
+#       DATABASE_URL: "postgresql://postgres:123@abelsberg_database:5432/abelsberg"
+#       AUTH_SECRET: "jXn2r5u8x/A?D(G+KbPeShVmYq3t6w9z"
+#       NEXTAUTH_URL: https://abelsberg.com
+#       # NEXT_PUBLIC_API_URL: "https://simpllo.ru"
+#     depends_on:
+#       - database_abelsberg
+#     networks:
+#       - abelsberg
+
+#   database_abelsberg:
+#     container_name: database_abelsberg
+#     image: postgres:16.1-alpine
+#     restart: unless-stopped
+#     # user: 999:989
+#     environment:
+#       POSTGRES_PASSWORD: "123"
+#       POSTGRES_USER: "postgres"
+#       POSTGRES_DB: "abelsberg"
+#     # logging:
+#     #   driver: syslog
+#     #   options:
+#     #     tag: swp/database
+#     # ports:
+#     #   - "127.0.0.1:5432:5432"
+#     volumes:
+#       - ./data/abelsberg:/var/lib/postgresql/data
+#     networks:
+#       - abelsberg
+
+# networks:
+#   abelsberg:
+#     name: abelsberg
+#     driver: bridge
+
 services:
   abelsberg:
     container_name: abelsberg-web
@@ -6,39 +53,39 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       NODE_ENV: production
+      DB_USER: "postgres"
       DB_PASSWORD: "123"
-      DB_USERNAME: "postgres"
-      DB_DATABASE: "abelsberg"
-      DB_HOST: "abelsberg_database"
+      DB_NAME: "abelsberg"
+      DB_HOST: "database_abelsberg"
       DB_PORT: "5432"
-      DATABASE_URL: "postgresql://postgres:123@abelsberg_database:5432/abelsberg"
+      DATABASE_URL: "postgresql://postgres:123@database_abelsberg:5432/abelsberg"
       AUTH_SECRET: "jXn2r5u8x/A?D(G+KbPeShVmYq3t6w9z"
       NEXTAUTH_URL: https://abelsberg.com
-      # NEXT_PUBLIC_API_URL: "https://simpllo.ru"
     depends_on:
-      - database_abelsberg
+      database_abelsberg:
+        condition: service_healthy
     networks:
       - abelsberg
+    restart: always
 
   database_abelsberg:
     container_name: database_abelsberg
     image: postgres:16.1-alpine
-    restart: unless-stopped
-    # user: 999:989
+    restart: always
     environment:
       POSTGRES_PASSWORD: "123"
       POSTGRES_USER: "postgres"
       POSTGRES_DB: "abelsberg"
-    # logging:
-    #   driver: syslog
-    #   options:
-    #     tag: swp/database
-    # ports:
-    #   - "127.0.0.1:5432:5432"
     volumes:
       - ./data/abelsberg:/var/lib/postgresql/data
     networks:
       - abelsberg
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d abelsberg"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
 networks:
   abelsberg:
